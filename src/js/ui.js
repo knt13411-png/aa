@@ -82,7 +82,7 @@ function show(cur) {
   S.R = Insight.build(cur, S.history);
   $('#home').hidden = true;
   $('#dash').hidden = false;
-  $('#barActs').hidden = false;
+  $('#btnReport').hidden = false;
   renderDash();
   window.scrollTo(0, 0);
 }
@@ -92,7 +92,7 @@ function goHome() {
   S.cur = null; S.R = null;
   $('#dash').hidden = true; $('#dash').innerHTML = '';
   $('#home').hidden = false;
-  $('#barActs').hidden = true;
+  $('#btnReport').hidden = true;
   renderHistory();
 }
 
@@ -137,7 +137,7 @@ function renderDash() {
       <div>
         <div class="eyebrow">사후검토(AAR) 분석 결과</div>
         <h1>${U.esc(info.훈련명)}</h1>
-        <div class="meta"><span>📅 ${U.esc(info.시작일)}${info.종료일 !== info.시작일 ? ' ~ ' + U.esc(info.종료일) : ''}</span><span>🪖 ${U.esc(R.sideName)}</span><span>⚖ 비교 기준: ${U.esc(R.baseText)}</span></div>
+        <div class="meta"><span>📅 ${U.esc(info.시작일)}${info.종료일 !== info.시작일 ? ' ~ ' + U.esc(info.종료일) : ''}</span><span>🪖 ${U.esc(R.sideName)}</span><span>📄 ${U.esc(info.원천파일명 || '')}</span><span>⚖ 비교 기준: ${U.esc(R.baseText)}</span></div>
       </div>
       <div class="tally">
         <div class="t good"><b>${nStrong}</b><span>강점 기능</span></div>
@@ -190,14 +190,19 @@ function renderDash() {
     </div>
 
     <div class="foot">
-      <button class="btn primary" id="btnReport2">⬇ 브리핑 자료 다운로드 (.pptx)</button>
-      <span class="hint">표지 · 보고 요지 · 훈련 개요 · 피아 교전 결과 · 기능별 분석 · 제대별 분석 · 유지/개선(관찰·논의·건의) · 건의 · 붙임 (PowerPoint·한쇼에서 열림)</span>
+      <button class="btn primary" id="btnUpload2">📂 다른 엑셀 데이터 넣기</button>
+      <button class="btn" id="btnReport2">브리핑 PPT 받기 (.pptx)</button>
+      <span class="hint">파일을 화면 아무 곳에나 끌어 놓아도 새로 분석합니다</span>
     </div>`;
 
   destroyCharts();
   $$('canvas[data-chart]').forEach(cv => S.charts.push(new Chart(cv, Charts.defs[cv.dataset.chart](R, 1))));
   $('#btnReport2').onclick = downloadReport;
+  $('#btnUpload2').onclick = pickFile;
 }
+
+const pickFile = () => $('#fileXlsx').click();
+
 
 async function downloadReport() {
   if (!S.R) return;
@@ -234,13 +239,18 @@ async function init() {
   Config.load();
   Charts.setup();
   bindDrop();
-  $('#btnNew').onclick = goHome;
+  $('.brand').onclick = goHome;
   $('#btnReport').onclick = downloadReport;
+  $('#btnUpload').onclick = pickFile;
+  $('#sampleLink').onclick = e => {
+    e.preventDefault();
+    try { U.download(Sample.build(), Sample.fileName); } catch (err) { console.error(err); U.toast('샘플 생성 실패: ' + err.message, 'err'); }
+  };
   await loadHistory();
   renderHistory();
 }
 
 /* 자동 점검용 진입점 */
-window.AAR = { S, Engine, Insight, Deck, Config, U, handleFiles, analyzeFile, show, goHome, downloadReport };
+window.AAR = { S, Engine, Insight, Deck, Sample, Config, U, handleFiles, analyzeFile, show, goHome, downloadReport, pickFile };
 
 init().catch(e => { console.error(e); U.toast('초기화 실패: ' + e.message, 'err'); });

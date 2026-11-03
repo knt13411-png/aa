@@ -12,10 +12,8 @@
 <header id="appbar">
   <div class="brand">사후검토 분석기 <small>AAR · 오프라인</small></div>
   <span class="grow"></span>
-  <div id="barActs" hidden>
-    <button class="btn ghost" id="btnNew">다른 파일 분석</button>
-    <button class="btn primary" id="btnReport">⬇ 브리핑 자료 다운로드 (.pptx)</button>
-  </div>
+  <button class="btn ghost" id="btnReport" hidden>PPT</button>
+  <button class="btn primary" id="btnUpload">📂 엑셀 데이터 넣기</button>
 </header>
 
 <main>
@@ -23,13 +21,14 @@
   <label id="drop" class="drop">
     <input type="file" id="fileXlsx" accept=".xlsx,.xls" multiple hidden>
     <div class="drop-icon">⬆</div>
-    <div class="drop-title">훈련 데이터 엑셀을 여기에 끌어 놓으세요</div>
-    <div class="drop-sub">또는 눌러서 파일 선택 · 훈련명과 기간은 파일에서 자동으로 읽습니다</div>
+    <div class="drop-title">훈련 데이터 엑셀을 넣으세요</div>
+    <div class="drop-sub">여기를 눌러 파일을 고르거나 끌어 놓으면 바로 분석해서 결과를 보여 줍니다</div>
     <div class="drop-steps">
-      <span>① 파일 넣기</span><span>→</span><span>② 자동 분석·시각화</span><span>→</span><span>③ 브리핑 PPT(.pptx) 다운로드</span>
+      <span>① 엑셀 데이터 넣기</span><span>→</span><span>② 자동 분석</span><span>→</span><span>③ 결과 화면 확인</span>
     </div>
   </label>
   <p class="hint center">여러 훈련 파일을 한 번에 넣으면 날짜순으로 정리하고, 가장 최근 훈련을 이전 훈련들과 비교합니다.</p>
+  <p class="hint center"><a href="#" id="sampleLink">⬇ 입력 양식 샘플 받기 (.xlsx)</a> · 이 양식대로 채운 엑셀을 넣으면 됩니다</p>
   <div id="histBox"></div>
 </section>
 
