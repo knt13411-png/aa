@@ -273,6 +273,7 @@ async function init() {
   $('.brand').onclick = goHome;
   $('#btnReport').onclick = downloadReport;
   $('#btnUpload').onclick = pickFile;
+  $('#ctaUpload').onclick = pickFile;
   $('#sampleLink').onclick = e => {
     e.preventDefault();
     try { U.download(Sample.build(), Sample.fileName); } catch (err) { console.error(err); U.toast('샘플 생성 실패: ' + err.message, 'err'); }
