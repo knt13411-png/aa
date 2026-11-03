@@ -53,6 +53,13 @@ main { padding: 20px; max-width: 1400px; margin: 0 auto; }
 .drop-steps span:nth-child(odd) { background: #f3f4f1; border-radius: 14px; padding: 4px 12px; }
 #histBox { margin-top: 18px; }
 #sampleLink { color: var(--accent); font-weight: 700; }
+.demo { margin: 16px auto 0; max-width: 660px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 18px; text-align: center; font-size: 14px; }
+.demo b { display: block; margin-bottom: 10px; }
+.demo-btn { font: inherit; font-weight: 700; border: 1px solid var(--accent); background: #fff; color: var(--accent); border-radius: 8px; padding: 8px 14px; margin: 0 4px 8px; cursor: pointer; }
+.demo-btn.primary { background: var(--accent); color: #fff; }
+.demo-btn:hover { filter: brightness(.95); }
+.demo-dl { color: var(--ink-2); font-size: 13px; }
+.demo-dl a { color: var(--accent); font-weight: 600; }
 .hist { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 16px; font-size: 13px; }
 .hist ul { margin: 6px 0 0; padding-left: 18px; color: var(--ink-2); }
 .hist li { margin: 2px 0; }
