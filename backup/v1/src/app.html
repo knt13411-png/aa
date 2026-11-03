@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>사후검토 분석기</title>
+<style>
+/*__CSS__*/
+</style>
+</head>
+<body>
+<header id="appbar">
+  <div class="brand">사후검토 분석기 <small>MVP v1.0 · 오프라인</small></div>
+  <nav>
+    <button data-go="list" class="nav-btn">기록 목록</button>
+    <button data-go="upload" class="nav-btn">새 훈련</button>
+    <button data-go="dash" class="nav-btn" id="navDash" disabled>분석 대시보드</button>
+    <button data-go="settings" class="nav-btn">설정</button>
+  </nav>
+  <div class="store-badge" id="storeBadge" title="저장 방식"></div>
+</header>
+
+<div id="reconnect" class="banner" hidden>
+  저장 폴더 접근 권한을 다시 확인해야 합니다.
+  <button class="btn primary" id="btnReconnect">폴더 다시 연결</button>
+  <button class="btn" data-go="settings">다른 폴더 지정</button>
+</div>
+
+<main>
+<!-- S3 기록 목록 -->
+<section id="scr-list" class="screen">
+  <div class="toolbar">
+    <h2>훈련 기록 목록</h2>
+    <input type="search" id="listSearch" placeholder="훈련명·비고 검색">
+    <span class="grow"></span>
+    <button class="btn" id="btnImportZip">훈련 불러오기(.zip)</button>
+    <input type="file" id="fileZip" accept=".zip" hidden>
+    <button class="btn" id="btnCompareSel" disabled>선택 훈련 비교</button>
+    <button class="btn primary" data-go="upload">+ 새 훈련</button>
+  </div>
+  <p class="hint">비교할 훈련을 2~5건 선택한 뒤 [선택 훈련 비교]를 누르세요. ▶를 누르면 제대 트리가 펼쳐지고, 제대를 누르면 해당 제대로 열립니다.</p>
+  <div id="listBody"></div>
+</section>
+
+<!-- S1 업로드 -->
+<section id="scr-upload" class="screen" hidden>
+  <div class="toolbar"><h2>새 훈련 분석</h2></div>
+  <div class="upload-grid">
+    <div>
+      <label id="drop" class="drop">
+        <input type="file" id="fileXlsx" accept=".xlsx,.xls" hidden>
+        <div class="drop-icon">⬆</div>
+        <div><b>훈련 데이터 엑셀(.xlsx)</b>을 여기로 끌어 놓거나 눌러서 선택</div>
+        <div class="hint" id="dropName">시트: 교전기록 · 탐지기록 · 위치기록 · 피해기록 · 지휘통신 · 지속지원</div>
+      </label>
+    </div>
+    <form id="infoForm" class="card form" autocomplete="off">
+      <h3>훈련 정보</h3>
+      <label>훈련명 <input name="훈련명" required placeholder="예: 백두3호훈련"></label>
+      <div class="row2">
+        <label>시작일 <input name="시작일" type="date"></label>
+        <label>종료일 <input name="종료일" type="date"></label>
+      </div>
+      <label>훈련부대(여단) <input name="훈련부대" placeholder="예: 1여단"></label>
+      <label>비고 <textarea name="비고" rows="2"></textarea></label>
+      <p class="hint">시작일·종료일을 비워 두면 데이터의 첫·마지막 시각으로 채웁니다.</p>
+      <button class="btn primary big" id="btnAnalyze" type="submit" disabled>분석</button>
+    </form>
+  </div>
+  <div id="validation"></div>
+</section>
+
+<!-- S2 대시보드 -->
+<section id="scr-dash" class="screen" hidden>
+  <div class="dash-top">
+    <div class="crumb" id="crumb"></div>
+    <div class="seg" id="sideSeg">
+      <button data-side="전체">전체</button><button data-side="훈련부대">훈련부대</button><button data-side="대항군">대항군</button>
+    </div>
+    <span class="grow"></span>
+    <span class="dirty" id="dirtyMark" hidden>● 저장 안 됨</span>
+    <button class="btn" id="btnSave">저장</button>
+    <button class="btn" id="btnShotAll" title="현재 탭의 그래프를 한 장(1920×1080)으로 저장">화면 전체 PNG</button>
+    <button class="btn primary" id="btnPresent" title="회의 모드 (←/→ 넘김, Esc 종료)">전체화면</button>
+  </div>
+  <div class="tabs" id="tabs">
+    <button data-tab="result" class="on">① 결과 분석</button>
+    <button data-tab="diag">② 6대 기능 진단</button>
+    <button data-tab="cmp">③ 훈련 비교</button>
+  </div>
+  <div id="tab-result" class="tab grid"></div>
+  <div id="tab-diag" class="tab" hidden></div>
+  <div id="tab-cmp" class="tab" hidden></div>
+</section>
+
+<!-- S4 설정 -->
+<section id="scr-settings" class="screen" hidden>
+  <div class="toolbar">
+    <h2>설정</h2><span class="grow"></span>
+    <button class="btn" id="btnCfgExport">설정 내보내기(JSON)</button>
+    <button class="btn" id="btnCfgImport">설정 불러오기(JSON)</button>
+    <input type="file" id="fileCfg" accept=".json" hidden>
+    <button class="btn" id="btnCfgReset">기본값 복원</button>
+    <button class="btn primary" id="btnCfgSave">설정 저장</button>
+  </div>
+  <div id="settingsBody"></div>
+</section>
+</main>
+
+<div id="present-nav" hidden><span id="presentPos"></span> · ←/→ 넘김 · Esc 종료</div>
+<div id="busy" hidden><div class="spinner"></div><span>처리 중…</span></div>
+<div id="toasts"></div>
+
+<script>
+//__LIBS__
+</script>
+<script>
+//__APP__
+</script>
+</body>
+</html>
