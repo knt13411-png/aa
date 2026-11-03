@@ -8,21 +8,52 @@ const S = { history: [], cur: null, R: null, charts: [] };
 const HIST_KEY = 'history.v2';
 
 /* ---------- 이전 훈련 기록 (비교 기준용 요약) ---------- */
-async function loadHistory() { try { S.history = (await U.idbGet('meta', HIST_KEY)) || []; } catch (e) { S.history = []; } }
-async function saveHistory() { try { await U.idbPut('meta', HIST_KEY, S.history); } catch (e) { /* 저장 불가 환경: 이번 세션에서만 유지 */ } }
+const byDate = (a, b) => String(a.시작일).localeCompare(String(b.시작일));
+async function loadHistory() {
+  try { S.history = (await U.idbGet('meta', HIST_KEY)) || []; } catch (e) { S.history = []; }
+  if (!Cloud.on()) return;
+  // 공유 저장소 기록을 우선하고, 이 브라우저에만 있던 기록은 올려서 합친다
+  try {
+    const remote = await Cloud.list();
+    const ids = new Set(remote.map(h => h.id));
+    const localOnly = S.history.filter(h => !ids.has(h.id));
+    await Cloud.save(localOnly);
+    S.history = remote.concat(localOnly).sort(byDate);
+    Cloud.state = 'ok';
+    try { await U.idbPut('meta', HIST_KEY, S.history); } catch (e) { /* 무시 */ }
+  } catch (e) { console.error(e); Cloud.state = 'err'; }
+}
+async function saveHistory(changed) {
+  try { await U.idbPut('meta', HIST_KEY, S.history); } catch (e) { /* 저장 불가 환경: 이번 세션에서만 유지 */ }
+  if (!Cloud.on() || !changed || !changed.length) return;
+  try { await Cloud.save(changed); Cloud.state = 'ok'; }
+  catch (e) { console.error(e); Cloud.state = 'err'; U.toast('공유 저장소(Supabase)에 저장하지 못했습니다. 이 브라우저에만 저장했습니다.', 'err'); }
+}
 function remember(info, model) {
-  S.history = S.history.filter(h => h.id !== info.id);
-  S.history.push({ id: info.id, 훈련명: info.훈련명, 시작일: info.시작일, 종료일: info.종료일, levelStats: model.levelStats, 분석일: U.nowStr() });
-  S.history.sort((a, b) => String(a.시작일).localeCompare(String(b.시작일)));
+  const h = { id: info.id, 훈련명: info.훈련명, 시작일: info.시작일, 종료일: info.종료일, 훈련부대: info.훈련부대, 원천파일명: info.원천파일명, levelStats: model.levelStats, 분석일: U.nowStr() };
+  S.history = S.history.filter(x => x.id !== info.id);
+  S.history.push(h);
+  S.history.sort(byDate);
+  return h;
+}
+
+function cloudNote() {
+  if (Cloud.state === 'ok') return '<span class="hint">☁ 공유 저장소(Supabase)와 동기화됨</span>';
+  if (Cloud.state === 'err') return '<span class="hint">⚠ 공유 저장소(Supabase)에 연결하지 못해 이 브라우저 기록만 씁니다</span>';
+  return '';
 }
 
 function renderHistory() {
   const box = $('#histBox');
-  if (!S.history.length) { box.innerHTML = ''; return; }
-  box.innerHTML = `<div class="hist"><b>비교 기준으로 쓰는 이전 훈련 ${S.history.length}건</b> · <a id="histClear">기록 지우기</a>
+  if (!S.history.length) { box.innerHTML = cloudNote() ? `<div class="hist">${cloudNote()}</div>` : ''; return; }
+  box.innerHTML = `<div class="hist"><b>비교 기준으로 쓰는 이전 훈련 ${S.history.length}건</b> · <a id="histClear">기록 지우기</a> ${cloudNote()}
     <ul>${S.history.slice().reverse().map(h => `<li>${U.esc(h.훈련명)} <span class="hint">(${U.esc(h.시작일)})</span></li>`).join('')}</ul></div>`;
   $('#histClear').onclick = async () => {
-    if (!confirm('이전 훈련 기록을 모두 지울까요? 이후 분석은 대항군과의 피아 비교로 판정합니다.')) return;
+    const shared = Cloud.state === 'ok' ? ' 공유 저장소(Supabase)의 기록도 함께 지워져 다른 사용자에게도 사라집니다.' : '';
+    if (!confirm(`이전 훈련 기록을 모두 지울까요?${shared} 이후 분석은 대항군과의 피아 비교로 판정합니다.`)) return;
+    if (Cloud.state === 'ok') {
+      try { await Cloud.clear(); } catch (e) { console.error(e); U.toast('공유 저장소 기록을 지우지 못했습니다.', 'err'); return; }
+    }
     S.history = []; await saveHistory(); renderHistory();
   };
 }
@@ -66,8 +97,8 @@ async function handleFiles(fileList) {
   if (!done.length) return;
   // 날짜순으로 기록에 넣고 가장 최근 훈련을 보여 준다
   done.sort((a, b) => String(a.info.시작일).localeCompare(String(b.info.시작일)));
-  for (const r of done) remember(r.info, r.model);
-  await saveHistory();
+  const changed = done.map(r => remember(r.info, r.model));
+  await saveHistory(changed);
   show(done[done.length - 1]);
   U.toast(done.length > 1 ? `${done.length}개 훈련을 분석했습니다. 가장 최근 훈련을 표시합니다.` : '분석 완료', 'ok');
 }
@@ -251,6 +282,6 @@ async function init() {
 }
 
 /* 자동 점검용 진입점 */
-window.AAR = { S, Engine, Insight, Deck, Sample, Config, U, handleFiles, analyzeFile, show, goHome, downloadReport, pickFile };
+window.AAR = { S, Engine, Insight, Deck, Sample, Config, U, Cloud, loadHistory, renderHistory, handleFiles, analyzeFile, show, goHome, downloadReport, pickFile };
 
 init().catch(e => { console.error(e); U.toast('초기화 실패: ' + e.message, 'err'); });

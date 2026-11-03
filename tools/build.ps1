@@ -8,7 +8,7 @@ function Read-Utf8($p) { [IO.File]::ReadAllText((Join-Path $root $p), [Text.Enco
 function Clean($s) { ($s -replace '//[#@] sourceMappingURL=\S*', '') -replace '</script', '<\/script' }
 
 $libs = (Clean (Read-Utf8 'lib\xlsx.full.min.js')) + "`n;`n" + (Clean (Read-Utf8 'lib\chart.umd.min.js'))
-$order = 'config', 'util', 'engine', 'insight', 'charts', 'pptx', 'deck', 'sample', 'ui'
+$order = 'config', 'util', 'engine', 'insight', 'charts', 'pptx', 'deck', 'sample', 'cloud', 'ui'
 $app = ($order | ForEach-Object { "/* ===== $_.js ===== */`n" + (Clean (Read-Utf8 "src\js\$_.js")) }) -join "`n"
 $app = "(function () {`n$app`n})();"
 
