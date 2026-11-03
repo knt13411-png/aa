@@ -277,6 +277,24 @@ async function init() {
     e.preventDefault();
     try { U.download(Sample.build(), Sample.fileName); } catch (err) { console.error(err); U.toast('샘플 생성 실패: ' + err.message, 'err'); }
   };
+  // 배포 사이트에 함께 올린 샘플 엑셀(samples/)을 불러와 바로 분석한다
+  const DEMO = ['샘플1_2026-06_백두1호훈련.xlsx', '샘플2_2026-08_백두2호훈련.xlsx', '샘플3_2026-10_백두3호훈련.xlsx'];
+  document.querySelectorAll('[data-demo]').forEach(b => b.onclick = async () => {
+    const names = b.dataset.demo === 'all' ? DEMO : [DEMO[+b.dataset.demo]];
+    try {
+      U.busy('샘플 불러오는 중…');
+      const files = await Promise.all(names.map(async n => {
+        const r = await fetch('samples/' + encodeURIComponent(n));
+        if (!r.ok) throw new Error(n + ' (' + r.status + ')');
+        return new File([await r.blob()], n);
+      }));
+      U.busy();
+      await handleFiles(files);
+    } catch (err) {
+      U.busy(); console.error(err);
+      U.toast('샘플을 불러오지 못했습니다. 아래 링크로 샘플을 받아 직접 넣어 주세요. (' + err.message + ')', 'err');
+    }
+  });
   await loadHistory();
   renderHistory();
 }
